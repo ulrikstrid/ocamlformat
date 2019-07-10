@@ -621,7 +621,7 @@ let fmt_before t conf ?pro ?(epi = Fmt.break_unless_newline 1 0) ?eol ?adj =
   fmt_cmts t conf t.cmts_before ?pro ~epi ?eol ?adj
 
 let fmt_after t conf ?(pro = Fmt.break_unless_newline 1 0) ?epi =
-  let within = fmt_cmts t conf t.cmts_within ~pro ?epi in
+  let within = fmt_cmts t conf t.cmts_within ~pro ?epi ~eol:Fmt.noop in
   let after = fmt_cmts t conf t.cmts_after ~pro ?epi ~eol:Fmt.noop in
   fun loc -> within loc $ after loc
 
