@@ -2326,8 +2326,11 @@ and fmt_expression c ?(box = true) ?pro ?epi ?eol ?parens ?(indent_wrap = 0)
         wrap_fits_breaks_exp_if ~space:false c ~parens:true ~loc:pexp_loc
           (str "module " $ m $ fmt_atrs)
       in
+      (* comments on the module should be printed after the expression *)
+      let cmts_after = Cmts.fmt_after c me.pmod_loc in
       hovbox 0
-        (compose_module (fmt_module_expr c (sub_mod ~ctx me)) ~f:fmt_mod)
+        ( compose_module (fmt_module_expr c (sub_mod ~ctx me)) ~f:fmt_mod
+        $ cmts_after )
   | Pexp_record (flds, default) ->
       let fmt_field (lid1, f) =
         let fmt_rhs e = fmt_expression c (sub_exp ~ctx e) in
