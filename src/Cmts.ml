@@ -179,14 +179,16 @@ end
 module CmtSet : sig
   type t
 
-  val of_list : (string * Location.t) list -> t
+  val of_list : Cmt.t list -> t
 
-  val to_list : t -> (string * Location.t) list
+  val to_list : t -> Cmt.t list
   (** ordered by start location *)
 
   val empty : t
 
   val is_empty : t -> bool
+
+  val insert : t -> Cmt.t -> t
 
   val split : t -> Location.t -> t * t * t
   (** [split s {loc_start; loc_end}] splits [s] into the subset of comments
@@ -213,9 +215,9 @@ end = struct
     end)
   end
 
-  type smap = (string * Location.t) list Map.M(Order_by_start).t
+  type smap = Cmt.t list Map.M(Order_by_start).t
 
-  type emap = (string * Location.t) list Map.M(Order_by_end).t
+  type emap = Cmt.t list Map.M(Order_by_end).t
 
   type t = smap * emap
 
@@ -227,11 +229,12 @@ end = struct
 
   let is_empty (smap, _) = Map.is_empty smap
 
-  let of_list cmts =
-    List.fold cmts ~init:empty ~f:(fun (smap, emap) cmt ->
-        let _, loc = cmt in
-        ( Map.add_multi smap ~key:loc ~data:cmt
-        , Map.add_multi emap ~key:loc ~data:cmt ))
+  let insert (smap, emap) cmt =
+    let _, loc = cmt in
+    ( Map.add_multi smap ~key:loc ~data:cmt
+    , Map.add_multi emap ~key:loc ~data:cmt )
+
+  let of_list cmts = List.fold cmts ~init:empty ~f:insert
 
   let to_list (smap, _) = List.concat (Map.data smap)
 
@@ -361,9 +364,9 @@ let rec place t loc_tree ?prev_loc locs cmts =
               in
               is_adjacent t curr_loc l)
         in
-        (CmtSet.of_list a, CmtSet.of_list b)
+        (a, CmtSet.of_list b)
       in
-      let within = CmtSet.(of_list (to_list within @ to_list within')) in
+      let within = List.fold_left within' ~init:within ~f:CmtSet.insert in
       let before_curr =
         match prev_loc with
         | None -> before
